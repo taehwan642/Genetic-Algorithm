@@ -5,11 +5,14 @@
 
 using namespace std;
 /* UPDATES
-	유전 알고리즘
-	0.1 - 제작시작 (2020-03-26)
+	Genetic Algorithm
+	0.1 - START (2020-03-26)
+	0.2 - Mutate Bug Fix
 UPDATES */
 
-
+/* NEED TO DO
+	Adding Two More Crossovers
+NEED TO DO */
 
 // individual 의 수
 #define population 50
@@ -17,6 +20,9 @@ UPDATES */
 #define genes 8
 // 상위 부모의 수 (순위 기반 선택)
 #define top 15
+// 각 유전자의 최대 값 0~9
+#define geneval 9
+
 
 list<class individual> individuals;
 vector<class individual> top_individuals;
@@ -65,10 +71,10 @@ individual Single_Point_Crossover(individual* a, individual* b)
 	return child;
 }
 // 절차 : 
-// 초기화 (Initalize) OK
+// 초기화 (Initialize) OK
 // 선택 (Selection) OK
 // 교차 (Crossover) OK, 하지만 더 추가해야함
-// 변이 (Mutation)
+// 변이 (Mutation) OK
 // 대치 (Replace) OK
 // 반복 (Loop) OK
 // 종료 (Quit) OK
@@ -79,7 +85,7 @@ void Initalize()
 		individual ind;
 		for (int i = 0; i < genes; i++)
 		{
-			ind.chromosome[i] = Random(0, 1); // 바꿔야함
+			ind.chromosome[i] = Random(0, geneval); // 바꿔야함
 		}
 		GetFitness(&ind);
 		individuals.push_back(ind);
@@ -108,32 +114,18 @@ void Crossover()
 		int x = Random(0, top - 1);
 		int y = Random(0, top - 1);
 		ind = Single_Point_Crossover(&top_individuals[x], &top_individuals[y]);
+		int m = Random(0, 100);
+		if (m == 0)
+		{
+			int a = Random(0, population - 1);
+			int b = Random(0, genes - 1);
+			int c = Random(0, geneval); // 바꿔야함
+			ind.chromosome[b] = c;
+		}
 		GetFitness(&ind);
 		individuals.push_back(ind);
 		individuals.sort(Comp);
 	}
-}
-
-void Mutation()
-{
-	int m = Random(0, 100);
-	if (m == 0)
-	{
-		int a = Random(0, population - 1);
-		int b = Random(0, genes - 1);
-		int c = Random(0, 1); // 바꿔야함
-		int num = 0;
-		for (auto it : individuals)
-		{
-			if (num == a)
-			{
-				it.chromosome[b] = c;
-				return;
-			}
-			num++;
-		}
-	}
-
 }
 
 void Reset()
@@ -143,6 +135,7 @@ void Reset()
 
 void Print()
 {
+	int num = 0;
 	list<individual>::iterator iter = individuals.begin();
 	for (iter; iter != individuals.end(); iter++)
 	{
@@ -150,7 +143,8 @@ void Print()
 		{
 			cout << iter->chromosome[i];
 		}
-		printf(" [ %d ] \t", iter->fitness);
+		printf(" [ %d ]  %d \t", iter->fitness, num);
+		num++;
 		cout << endl;
 	}
 }
@@ -160,7 +154,7 @@ int main(void)
 	srand(time(0));
 	Initalize();
 	Print();
-	int age = 1;
+	int age = 0;
 	cout << age << " 세대" << endl;
 	while (true)
 	{
@@ -172,7 +166,6 @@ int main(void)
 			Reset();
 			Selection();
 			Crossover();
-			Mutation();
 			Print();
 			age++;
 			cout << age << " 세대" << endl;
