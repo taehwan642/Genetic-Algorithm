@@ -7,11 +7,12 @@ using namespace std;
 /* UPDATES
 	Genetic Algorithm
 	0.1 - START (2020-03-26)
-	0.2 - Mutate Bug Fix
+	0.2 - Mutate Bug Fix (2020-03-26)
+	0.3 - Added Two Point Crossover (2020-03-27)
 UPDATES */
 
 /* NEED TO DO
-	Adding Two More Crossovers
+	Adding One More Crossovers - Uniform
 NEED TO DO */
 
 // individual 의 수
@@ -21,7 +22,7 @@ NEED TO DO */
 // 상위 부모의 수 (순위 기반 선택)
 #define top 15
 // 각 유전자의 최대 값 0~9
-#define geneval 9
+#define geneval 6
 
 
 list<class individual> individuals;
@@ -57,13 +58,31 @@ int GetFitness(individual* in)
 
 individual Single_Point_Crossover(individual* a, individual* b)
 {
-	int r = Random(0, genes - 1);
+	int r = Random(genes / 2, genes - 1);
 	individual child;
 	for (int i = 0; i < genes; i++)
 	{
 		child.chromosome[i] = a->chromosome[i];
 	}
 	for (int j = r; j < genes; j++)
+	{
+		child.chromosome[j] = b->chromosome[j];
+	}
+	GetFitness(&child);
+	return child;
+}
+
+individual Two_Point_Crossover(individual* a, individual* b)
+{
+	int r = Random(0, genes / 2);
+	// 시작점 0 ~ genes / 2,  끝점 genes / 2 ~ genes - 1
+	int endpoint = Random(genes / 2, genes - 1);
+	individual child;
+	for (int i = 0; i < genes; i++)
+	{
+		child.chromosome[i] = a->chromosome[i];
+	}
+	for (int j = r; j < endpoint; j++)
 	{
 		child.chromosome[j] = b->chromosome[j];
 	}
@@ -85,7 +104,7 @@ void Initalize()
 		individual ind;
 		for (int i = 0; i < genes; i++)
 		{
-			ind.chromosome[i] = Random(0, geneval); // 바꿔야함
+			ind.chromosome[i] = Random(0, geneval);
 		}
 		GetFitness(&ind);
 		individuals.push_back(ind);
@@ -113,13 +132,29 @@ void Crossover()
 		individual ind;
 		int x = Random(0, top - 1);
 		int y = Random(0, top - 1);
-		ind = Single_Point_Crossover(&top_individuals[x], &top_individuals[y]);
-		int m = Random(0, 100);
+		// 랜덤으로 2개의 값을 줘서, 0이면 single 1이면 two로 박고
+		int rand = Random(0, 1);
+		switch (rand)
+		{
+		case 0:
+			ind = Single_Point_Crossover(&top_individuals[x], &top_individuals[y]);
+			break;
+		case 1:
+			ind = Two_Point_Crossover(&top_individuals[x], &top_individuals[y]);
+			break;
+		default:
+			break;
+		}
+		int m = Random(0, 99);
 		if (m == 0)
 		{
 			int a = Random(0, population - 1);
 			int b = Random(0, genes - 1);
-			int c = Random(0, geneval); // 바꿔야함
+			int c = Random(0, geneval);
+			while (ind.chromosome[b] == c)
+			{
+				c = Random(0, geneval); 
+			}
 			ind.chromosome[b] = c;
 		}
 		GetFitness(&ind);
@@ -155,6 +190,7 @@ int main(void)
 	Initalize();
 	Print();
 	int age = 0;
+	int clear = 0;
 	cout << age << " 세대" << endl;
 	while (true)
 	{
@@ -162,11 +198,25 @@ int main(void)
 		scanf_s("%d", &num);
 		for (int i = 0; i < num; i++)
 		{
+			clear = 0;
 			system("cls");
 			Reset();
 			Selection();
 			Crossover();
 			Print();
+			for (auto it : individuals)
+			{
+				if (it.fitness == geneval * 4)
+				{
+					clear++;
+				}
+				if (clear == population)
+				{
+					age++;
+					cout << age << " 세대" << endl;
+					return 0;
+				}
+			}
 			age++;
 			cout << age << " 세대" << endl;
 		}
